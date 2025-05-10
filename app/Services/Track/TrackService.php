@@ -5,13 +5,17 @@ namespace App\Services\Track;
 use App\DTO\Track\TrackStoreDTO;
 use App\DTO\Track\TrackUpdateDTO;
 use App\Models\Track;
-use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class TrackService
 {
-    public function get(): Paginator
+    public function get(): Collection
     {
-        return Track::query()->latest()->whereNotNull('finished_at')->simplePaginate(15);
+        return Track::query()
+            ->whereNotNull('finished_at')
+            ->where('started_at', '>=', now()->subWeek())
+            ->orderBy('started_at', 'desc')
+            ->get();
     }
 
     public function getActive(): ?Track

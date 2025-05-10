@@ -20,9 +20,15 @@ class TrackController extends Controller
         return TrackResource::collection($service->get());
     }
 
-    public function getActive(TrackService $service): TrackResource
+    public function getActive(TrackService $service): TrackResource | JsonResponse
     {
-        return TrackResource::make($service->getActive());
+        $track = $service->getActive();
+
+        if ($track) {
+            return TrackResource::make($service->getActive());
+        }
+
+        return response()->json(['data' => null]);
     }
 
     public function store(Request $request, TrackService $service): TrackResource
