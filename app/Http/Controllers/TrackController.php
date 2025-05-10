@@ -20,6 +20,11 @@ class TrackController extends Controller
         return TrackResource::collection($service->get());
     }
 
+    public function getActive(TrackService $service): TrackResource
+    {
+        return TrackResource::make($service->getActive());
+    }
+
     public function store(Request $request, TrackService $service): TrackResource
     {
         $request->validate([
