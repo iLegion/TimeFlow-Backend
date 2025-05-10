@@ -11,7 +11,12 @@ class TrackService
 {
     public function get(): Paginator
     {
-        return Track::query()->latest()->simplePaginate(15);
+        return Track::query()->latest()->whereNotNull('finished_at')->simplePaginate(15);
+    }
+
+    public function getActive(): ?Track
+    {
+        return Track::query()->whereNull('finished_at')->first();
     }
 
     public function start(TrackStoreDTO $dto): Track
@@ -36,7 +41,7 @@ class TrackService
         $track->update([
             'title' => $dto->title ?? $track->title,
             'started_at' => $dto->started_at ?? $track->started_at ?? now(),
-            'finished_at' => $dto->finished_at ?? $track->finished_at,
+            'finished_at' => $dto->finished_at ?? $track->finished_at ?? now(),
         ]);
 
         return $track;
@@ -45,10 +50,5 @@ class TrackService
     public function delete(Track $track): ?bool
     {
         return $track->delete();
-    }
-
-    private function getActive(): ?Track
-    {
-        return Track::query()->whereNull('finished_at')->first();
     }
 }
