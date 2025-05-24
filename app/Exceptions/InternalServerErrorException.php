@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class InternalServerErrorException extends Exception
@@ -19,8 +20,6 @@ class InternalServerErrorException extends Exception
             'trace' => $this->getTraceAsString()
         ]);
 
-        return response()->json([
-            'message' => 'Internal Server Error.'
-        ], 500);
+        return response()->json(['message' => 'Internal Server Error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 }

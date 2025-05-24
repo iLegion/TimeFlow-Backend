@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime'
         ];
+    }
+
+    public function email(): Attribute
+    {
+        return new Attribute(
+            set: fn($value) => Str::lower($value),
+        );
     }
 
     public function generateNewToken(): NewAccessToken
