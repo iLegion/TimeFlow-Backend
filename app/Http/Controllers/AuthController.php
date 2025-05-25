@@ -10,7 +10,7 @@ use App\Services\User\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class AuthController extends Controller
@@ -53,14 +53,17 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'max:32'],
         ]);
 
-        $email = $request->input('email');
-        $password = $request->input('password');
+        $credentials = [
+            'email' => strtolower($request->input('email')),
+            'password' => $request->get('password'),
+        ];
 
-        $user = User::query()->where('email', $email)->first();
-
-        if (!$user || !Hash::check($password, $user->password)) {
-            return $this->response(['message' => 'The provided credentials are incorrect']);
+        if (!Auth::attempt($credentials)) {
+            return $this->responseError('The provided credentials are incorrect.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+
+        /** @var User $user */
+        $user = Auth::user();
 
         return $this->response(
             UserResource::make($user),
@@ -68,12 +71,18 @@ class AuthController extends Controller
         );
     }
 
-    public function logout(): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
         /** @var User $user */
-        $user = auth()->user();
+        $user = Auth::user();
 
-        $user->currentAccessToken()->delete();
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } else if ($user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
+        }
 
         return $this->response();
     }

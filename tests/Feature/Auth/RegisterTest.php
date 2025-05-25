@@ -11,7 +11,7 @@ use function Pest\Faker\fake;
 describe('Register', function () {
     beforeEach(function () {
         $this->name = fake()->name();
-        $this->email = fake()->unique()->safeEmail();
+        $this->email = strtolower(fake()->unique()->safeEmail());
         $this->password = fake()->password(8, 32);
     });
 
@@ -31,7 +31,8 @@ describe('Register', function () {
                 'data' => ['name' => $this->name, 'email' => $this->email],
             ])
             ->assertJson(fn (AssertableJson $json) =>
-                $json->whereType('token', 'string')
+                $json
+                    ->whereType('token', 'string')
                     ->where('token', fn ($token) => !empty($token))
                     ->etc()
             );
@@ -65,7 +66,13 @@ describe('Register', function () {
             ])
             ->assertJson([
                 'data' => ['name' => $this->name, 'email' => $lowerCaseEmail],
-            ]);
+            ])
+            ->assertJson(fn (AssertableJson $json) =>
+            $json
+                ->whereType('token', 'string')
+                ->where('token', fn ($token) => !empty($token))
+                ->etc()
+            );
 
         assertDatabaseHas(User::class, ['name' => $this->name, 'email' => $lowerCaseEmail]);
     });
@@ -253,7 +260,9 @@ describe('Register', function () {
                 'password_confirmation' => $this->password,
             ])
                 ->assertStatus(500)
-                ->assertJson(['message' => 'Internal Server Error.']);
+                ->assertJson([
+                    'message' => 'Internal Server Error.'
+                ]);
         });
     });
 });

@@ -10,4 +10,9 @@ abstract class Controller
     {
         return response()->json(['data' => $data, ...$additional]);
     }
+
+    public function responseError(string $message, int $status): JsonResponse
+    {
+        return response()->json(['message' => $message], $status);
+    }
 }
