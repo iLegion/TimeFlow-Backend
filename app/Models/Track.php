@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,6 +15,8 @@ use Illuminate\Support\Carbon;
  * @property ?Carbon $finished_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @property-read User $user
  *
  * @method static Builder query()
  */
@@ -31,4 +34,9 @@ class Track extends Model
         'started_at',
         'finished_at',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

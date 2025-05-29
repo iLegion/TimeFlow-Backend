@@ -10,6 +10,7 @@ use App\Services\User\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -46,6 +47,9 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -59,7 +63,9 @@ class AuthController extends Controller
         ];
 
         if (!Auth::attempt($credentials)) {
-            return $this->responseError('The provided credentials are incorrect.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            throw ValidationException::withMessages([
+                'password' => ['The provided credentials are incorrect.'],
+            ]);
         }
 
         /** @var User $user */
