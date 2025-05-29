@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\DTO\Track\TrackStoreDTO;
+use App\DTO\Track\TrackCreateDTO;
 use App\DTO\Track\TrackUpdateDTO;
 use App\Http\Resources\Track\TrackResource;
 use App\Models\Track;
@@ -17,16 +17,12 @@ class TrackController extends Controller
 {
     public function index(TrackService $service): AnonymousResourceCollection
     {
-        return TrackResource::collection($service->get());
+        return TrackResource::collection($service->get($this->user));
     }
 
     public function getActive(TrackService $service): TrackResource | JsonResponse
     {
-        $track = $service->getActive();
-
-        if ($track) {
-            return TrackResource::make($service->getActive());
-        }
+        if ($track = $service->getActive($this->user)) return TrackResource::make($track);
 
         return response()->json(['data' => null]);
     }
@@ -40,7 +36,8 @@ class TrackController extends Controller
         ]);
 
         $track = $service->start(
-            new TrackStoreDTO(
+            new TrackCreateDTO(
+                $this->user,
                 $request->input('title'),
                 $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
                 $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
