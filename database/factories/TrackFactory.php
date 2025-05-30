@@ -23,7 +23,7 @@ class TrackFactory extends Factory
 
         return [
             'user_id' => $user->id,
-            'title' => fake()->text,
+            'title' => fake()->text(100),
             'started_at' => $randomStartedAt,
             'finished_at' => $randomFinishedAt,
         ];

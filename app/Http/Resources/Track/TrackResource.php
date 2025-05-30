@@ -19,8 +19,8 @@ class TrackResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'started_at' => $this->started_at,
-            'finished_at' => $this->finished_at,
+            'started_at' => $this->started_at->format('Y-m-d H:i:s'),
+            'finished_at' => $this->finished_at?->format('Y-m-d H:i:s'),
         ];
     }
 }
