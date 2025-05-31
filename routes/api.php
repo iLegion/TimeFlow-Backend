@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,13 @@ Route::middleware(['throttle:api'])->group(function () {
 
         Route::prefix('users')->group(function () {
             Route::get('me', [UserController::class, 'me']);
+        });
+
+        Route::prefix('projects')->group(function () {
+            Route::get('', [ProjectController::class, 'index']);
+            Route::post('', [ProjectController::class, 'store']);
+            Route::post('{project}', [ProjectController::class, 'update']);
+            Route::delete('{project}', [ProjectController::class, 'delete']);
         });
 
         Route::prefix('tracks')->group(function () {
