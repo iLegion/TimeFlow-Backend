@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\DTO\Track\TrackCreateDTO;
-use App\DTO\Track\TrackUpdateDTO;
+use App\Data\Track\TrackCreateData;
+use App\Data\Track\TrackUpdateData;
 use App\Http\Resources\Track\TrackResource;
+use App\Models\Project;
 use App\Models\Track;
 use App\Services\Track\TrackService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -17,21 +17,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TrackController extends Controller
 {
-    public function index(TrackService $service): AnonymousResourceCollection
+    public function index(TrackService $service): JsonResponse
     {
         Gate::authorize('viewAny', Track::class);
 
-        return TrackResource::collection($service->get($this->user));
+        return TrackResource::collection($service->get($this->user))->response();
     }
 
-    public function getActive(TrackService $service): TrackResource | JsonResponse
+    public function getActive(TrackService $service): JsonResponse
     {
         $track = $service->getActive($this->user);
 
         if ($track) {
             Gate::authorize('view', $track);
 
-            return TrackResource::make($track);
+            return TrackResource::make($track)->response();
         }
 
         return response()->json(['data' => null]);
@@ -42,18 +42,20 @@ class TrackController extends Controller
         Gate::authorize('create', Track::class);
 
         $request->validate([
+            'project_id' => ['sometimes', 'int', 'exists:projects,id'],
             'title' => ['nullable', 'string', 'max:1000'],
             'started_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
             'finished_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
         ]);
 
         $track = $service->start(
-            new TrackCreateDTO(
-                $this->user,
-                $request->input('title'),
-                $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
-                $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
-            )
+            TrackCreateData::from([
+                ...$request->toArray(),
+                'started_at' => $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
+                'finished_at' => $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
+                'user' => $this->user,
+                'project' => Project::query()->find($request->input('project_id')),
+            ])
         );
 
         return TrackResource::make($track)
@@ -66,6 +68,7 @@ class TrackController extends Controller
         Gate::authorize('update', $track);
 
         $request->validate([
+            'project_id' => ['sometimes', 'int', 'exists:projects,id'],
             'title' => ['nullable', 'string', 'max:1000'],
             'started_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
             'finished_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
@@ -73,11 +76,12 @@ class TrackController extends Controller
 
         $track = $service->update(
             $track,
-            new TrackUpdateDTO(
-                $request->input('title'),
-                $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
-                $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
-            )
+            TrackUpdateData::from([
+                ...$request->toArray(),
+                'started_at' => $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
+                'finished_at' => $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
+                'project' => Project::query()->find($request->input('project_id')),
+            ])
         );
 
         return TrackResource::make($track)->response();
