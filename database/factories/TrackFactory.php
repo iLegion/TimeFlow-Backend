@@ -17,12 +17,12 @@ class TrackFactory extends Factory
      */
     public function definition(): array
     {
-        $user = User::query()->inRandomOrder()->first();
         $randomStartedAt = fake()->dateTimeBetween(now()->subWeeks(2), now()->toDate());
         $randomFinishedAt = fake()->dateTimeBetween($randomStartedAt, Carbon::parse($randomStartedAt)->addMonths()->toDate());
 
         return [
-            'user_id' => $user->id,
+            'user_id' => User::factory(),
+
             'title' => fake()->text(100),
             'started_at' => $randomStartedAt,
             'finished_at' => $randomFinishedAt,

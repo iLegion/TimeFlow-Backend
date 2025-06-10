@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Database\Factories\TrackFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -19,6 +21,8 @@ use Laravel\Sanctum\NewAccessToken;
  * @property ?Carbon $email_verified_at
  * @property ?Carbon $created_at
  * @property ?Carbon $updated_at
+ *
+ * @property-read Collection<int, Project> $projects
  */
 class User extends Authenticatable
 {
@@ -42,5 +46,10 @@ class User extends Authenticatable
     public function generateNewToken(): NewAccessToken
     {
         return $this->createToken(Str::random(60));
+    }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
     }
 }

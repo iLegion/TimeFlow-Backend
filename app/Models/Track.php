@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $updated_at
  *
  * @property-read User $user
+ * @property-read ?Project $project
  *
  * @method static Builder query()
  */
@@ -40,5 +41,10 @@ class Track extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }
