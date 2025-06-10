@@ -47,6 +47,7 @@ class TrackService
         $track->finished_at = $data->finished_at;
 
         $track->user()->associate($data->user);
+        $track->project()->associate($data->project);
         $track->save();
 
         return $track;
@@ -56,6 +57,10 @@ class TrackService
     {
         if ($track->title !== $data->title) {
             $track->title = $data->title;
+        }
+
+        if ($track->project?->id !== $data->project?->id) {
+            $track->project()->associate($data->project);
         }
 
         $track->started_at = $data->started_at ?? $track->started_at ?? now();

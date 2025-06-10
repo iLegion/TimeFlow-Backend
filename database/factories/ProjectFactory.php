@@ -2,13 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<Project>
  */
-class UserFactory extends Factory
+class ProjectFactory extends Factory
 {
     /**
      * @return array<string, mixed>
@@ -16,9 +17,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'password' => bcrypt($this->faker->password(8, 32)),
+            'user_id' => User::factory(),
+            'title' => fake()->text(100),
         ];
     }
 }
