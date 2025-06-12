@@ -42,7 +42,7 @@ class TrackController extends Controller
         Gate::authorize('create', Track::class);
 
         $request->validate([
-            'project_id' => ['sometimes', 'int', 'exists:projects,id'],
+            'project_id' => ['sometimes', 'required', 'int', 'exists:projects,id'],
             'title' => ['nullable', 'string', 'max:1000'],
             'started_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
             'finished_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
@@ -68,7 +68,7 @@ class TrackController extends Controller
         Gate::authorize('update', $track);
 
         $request->validate([
-            'project_id' => ['sometimes', 'int', 'exists:projects,id'],
+            'project_id' => ['sometimes', 'required', 'int', 'exists:projects,id'],
             'title' => ['nullable', 'string', 'max:1000'],
             'started_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
             'finished_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],

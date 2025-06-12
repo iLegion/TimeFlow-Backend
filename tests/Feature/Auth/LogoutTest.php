@@ -14,7 +14,7 @@ describe('Logout', function () {
         $this->user = User::factory()->create(['email' => $this->email, 'password' => bcrypt($this->password)]);
     });
 
-    test('logout a user with an api token', function () {
+    it('logout a user with an api token', function () {
         /** @var NewAccessToken $token */
         $token = $this->user->generateNewToken();
 
@@ -31,7 +31,7 @@ describe('Logout', function () {
         ]);
     });
 
-//    test('logout a user that is authenticated with session via actingAs', function () {
+//    it('logout a user that is authenticated with session via actingAs', function () {
 //        getJson('/sanctum/csrf-cookie')->assertStatus(204);
 //
 //        postJson('/api/auth/login', ['email' => $this->email, 'password' => $this->password])
@@ -44,7 +44,7 @@ describe('Logout', function () {
 //        assertGuest('web');
 //    });
 
-    test('logout for unauthenticated', function () {
+    it('logout for unauthenticated', function () {
         postJson('/api/auth/logout')
             ->assertStatus(401);
     });
