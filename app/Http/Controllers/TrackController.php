@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Data\Track\TrackCreateData;
+use App\Data\Track\TrackIndexData;
 use App\Data\Track\TrackUpdateData;
 use App\Http\Resources\Track\TrackResource;
 use App\Models\Project;
@@ -17,11 +18,25 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TrackController extends Controller
 {
-    public function index(TrackService $service): JsonResponse
+    public function index(Request $request, TrackService $service): JsonResponse
     {
         Gate::authorize('viewAny', Track::class);
 
-        return TrackResource::collection($service->get($this->user))->response();
+        $request->validate([
+            'from' => ['sometimes', 'required_with:to', 'exclude_without:to', Rule::date()->format('Y-m-d')],
+            'to' => ['sometimes', 'required_with:from', 'exclude_without:from', Rule::date()->format('Y-m-d')],
+        ]);
+
+        $tracks = $service->get(
+            TrackIndexData::from([
+                ...$request->toArray(),
+                'from' => $request->exists('from') ? Carbon::parse($request->input('from')) : null,
+                'to' => $request->exists('to') ? Carbon::parse($request->input('to')) : null,
+                'user' => $this->user,
+            ])
+        );
+
+        return TrackResource::collection($tracks)->response();
     }
 
     public function getActive(TrackService $service): JsonResponse

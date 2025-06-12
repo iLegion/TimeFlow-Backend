@@ -3,6 +3,7 @@
 namespace App\Services\Track;
 
 use App\Data\Track\TrackCreateData;
+use App\Data\Track\TrackIndexData;
 use App\Data\Track\TrackUpdateData;
 use App\Models\Track;
 use App\Models\User;
@@ -10,12 +11,19 @@ use Illuminate\Database\Eloquent\Collection;
 
 class TrackService
 {
-    public function get(User $user): Collection
+    public function get(TrackIndexData $data): Collection
     {
         return Track::query()
             ->whereNotNull('finished_at')
-            ->where('started_at', '>=', now()->subWeek())
-            ->whereBelongsTo($user)
+            ->when($data->from && $data->to, function ($query) use ($data) {
+                $query
+                    ->where('started_at', '>=', $data->from)
+                    ->where('started_at', '<=', $data->to->endOfDay());
+            })
+            ->when(!$data->from || !$data->to, function ($query) use ($data) {
+                $query->where('started_at', '>=', now()->subWeek());
+            })
+            ->whereBelongsTo($data->user)
             ->orderBy('started_at', 'desc')
             ->get();
     }

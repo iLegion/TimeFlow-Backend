@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Project;
 use App\Models\Track;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,6 +23,7 @@ class TrackFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'project_id' => fake()->numberBetween(0, 1) ? Project::factory() : null,
 
             'title' => fake()->text(100),
             'started_at' => $randomStartedAt,
