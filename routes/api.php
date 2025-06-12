@@ -18,7 +18,12 @@ Route::middleware(['throttle:api'])->group(function () {
         });
 
         Route::prefix('users')->group(function () {
-            Route::get('me', [UserController::class, 'me']);
+            Route::prefix('me')->group(function () {
+                Route::get('', [UserController::class, 'me']);
+                Route::post('', [UserController::class, 'update']);
+                Route::post('email', [UserController::class, 'updateEmail']);
+                Route::post('password', [UserController::class, 'updatePassword']);
+            });
         });
 
         Route::prefix('projects')->group(function () {
