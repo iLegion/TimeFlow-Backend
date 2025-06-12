@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Resources\Project\ProjectResource;
+use App\Models\Project;
 use App\Models\Track;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Testing\Fluent\AssertableJson;
 use function Pest\Laravel\{ getJson, postJson, deleteJson, actingAs, assertDatabaseHas, assertDatabaseMissing };
 use function Pest\Faker\fake;
+
+const JSON_STRUCTURE = ['id', 'title', 'project', 'started_at', 'finished_at'];
 
 describe('Track', function () {
     beforeEach(function () {
@@ -14,13 +19,13 @@ describe('Track', function () {
     });
 
     describe('GET /api/tracks', function () {
-        test('guests cannot view tracks', function () {
+        it('[Guest] Cannot view tracks', function () {
             Auth::logout();
             getJson('/api/tracks')->assertUnauthorized();
         });
 
         // Maybe add test for getting track by week and more.
-        test('authenticated user can view their tracks', function () {
+        it('[Authenticated user] View their tracks', function () {
             $tracksForUser = Track::factory()
                 ->for($this->user)
                 ->count(3)
@@ -34,15 +39,11 @@ describe('Track', function () {
             getJson('/api/tracks')
                 ->assertOk()
                 ->assertJsonCount(3, 'data')
-                ->assertJsonStructure([
-                    'data' => [
-                        '*' => ['id', 'title', 'started_at', 'finished_at']
-                    ]
-                ])
+                ->assertJsonStructure(['data' => ['*' => JSON_STRUCTURE]])
                 ->assertJsonFragment(['id' => $tracksForUser->first()->id]);
         });
 
-        test('authenticated user sees an empty collection if they have no tracks', function () {
+        it('[Authenticated user] Empty collection if they have no tracks', function () {
             getJson('/api/tracks')
                 ->assertOk()
                 ->assertJsonCount(0, 'data');
@@ -50,12 +51,12 @@ describe('Track', function () {
     });
 
     describe('GET /api/tracks/active', function () {
-        test('guests cannot view active track', function () {
+        it('[Guests] Cannot view active track', function () {
             Auth::logout();
             getJson('/api/tracks/active')->assertUnauthorized();
         });
 
-        test('authenticated user can view their active track', function () {
+        it('[Authenticated user] View their active track', function () {
             $activeTrack = Track::factory()->for($this->user)->create(['finished_at' => null]);
 
             Track::factory()->for($this->user)->create(['finished_at' => now()]);
@@ -71,7 +72,7 @@ describe('Track', function () {
                 ]);
         });
 
-        test('authenticated user gets null data if no active track', function () {
+        it('[Authenticated user] Gets null if no active track', function () {
             Track::factory()->for($this->user)->count(2)->create(['finished_at' => now()]);
 
             getJson('/api/tracks/active')
@@ -79,7 +80,7 @@ describe('Track', function () {
                 ->assertJson(['data' => null]);
         });
 
-        test('authenticated user does not get active track of another user', function () {
+        it('[Authenticated user] Not get active track of another user', function () {
             Track::factory()
                 ->for(User::factory()->create())
                 ->create(['finished_at' => null]);
@@ -93,14 +94,15 @@ describe('Track', function () {
     describe('POST /api/tracks', function () {
         beforeEach(function () {
             $this->title = fake()->text(100);
+            $this->project = Project::factory()->for($this->user)->create();
         });
 
-        test('guests cannot create a track', function () {
+        it('[Guests] Cannot create a track', function () {
             Auth::logout();
             postJson('/api/tracks', ['title' => $this->title])->assertUnauthorized();
         });
 
-        test('authenticated user can create a track with only a title', function () {
+        it('[Authenticated user] Create a track with only a title', function () {
             postJson('/api/tracks', ['title' => $this->title])
                 ->assertCreated()
                 ->assertJsonFragment(['title' => $this->title])
@@ -113,39 +115,109 @@ describe('Track', function () {
             ]);
         });
 
-        test('authenticated user can create a track with all fields', function () {
+        it('[Authenticated user] Create a track with only a project', function () {
+            postJson('/api/tracks', ['project_id' => $this->project->id])
+                ->assertCreated()
+                ->assertJsonFragment(['project' => ProjectResource::make($this->project)])
+                ->assertJsonStructure(['data' => JSON_STRUCTURE]);
+
+            assertDatabaseHas('tracks', [
+                'user_id' => $this->user->id,
+                'project_id' => $this->project->id,
+                'finished_at' => null,
+            ]);
+        });
+
+        it('[Authenticated user] Create a track with all fields', function () {
             $startedAt = now()->subHour();
             $finishedAt = now();
 
             postJson('/api/tracks', [
                 'title' => $this->title,
+                'project_id' => $this->project->id,
                 'started_at' => $startedAt->format('Y-m-d H:i:s'),
                 'finished_at' => $finishedAt->format('Y-m-d H:i:s'),
             ])
                 ->assertCreated()
                 ->assertJsonFragment(['title' => $this->title])
+                ->assertJsonFragment(['project' => ProjectResource::make($this->project)])
                 ->assertJsonFragment(['started_at' => $startedAt->format('Y-m-d H:i:s')])
                 ->assertJsonFragment(['finished_at' => $finishedAt->format('Y-m-d H:i:s')]);
 
             assertDatabaseHas('tracks', [
                 'user_id' => $this->user->id,
+                'project_id' => $this->project->id,
                 'title' => $this->title,
                 'started_at' => $startedAt,
                 'finished_at' => $finishedAt,
             ]);
         });
 
-        test('creating a track validates title max length', function () {
-            postJson('/api/tracks', ['title' => str_repeat('a', 1001)])
-                ->assertJsonValidationErrors('title');
-        });
+        describe('Validation', function () {
+            describe('Project', function () {
+                it('is sometimes required', function () {
+                    postJson('/api/tracks', ['project_id' => null])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The project field is required.'));
+                });
 
-        test('creating a track validates date format', function () {
-            postJson('/api/tracks', ['started_at' => 'invalid-date'])
-                ->assertJsonValidationErrors('started_at');
+                it('is int', function () {
+                    postJson('/api/tracks', ['project_id' => 'test'])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The project field must be an integer.'));
+                });
 
-            postJson('/api/tracks', ['finished_at' => 'not-a-date'])
-                ->assertJsonValidationErrors('finished_at');
+                it('is exists', function () {
+                    postJson('/api/tracks', ['project_id' => 100])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The selected project is invalid.'));
+                });
+            });
+
+            describe('Title', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks', ['title' => null])
+                        ->assertJsonMissingValidationErrors('title');
+                });
+
+                it('must be a string', function () {
+                    postJson('/api/tracks', ['title' => 1])
+                        ->assertJsonValidationErrors('title')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'title', 'The title field must be a string.'));
+                });
+
+                it('must not be greater than 1000 characters', function () {
+                    postJson('/api/tracks', ['title' => str_repeat('a', 1001)])
+                        ->assertJsonValidationErrors('title')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'title', 'The title field must not be greater than 1000 characters.'));
+                });
+            });
+
+            describe('Started at', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks', ['started_at' => null])
+                        ->assertJsonMissingValidationErrors('started_at');
+                });
+
+                it('must match the format Y-m-d H:i:s', function () {
+                    postJson('/api/tracks', ['started_at' => '1999-01-01'])
+                        ->assertJsonValidationErrors('started_at')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'started_at', 'The started at field must match the format Y-m-d H:i:s.'));
+                });
+            });
+
+            describe('Finished at', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks', ['finished_at' => null])
+                        ->assertJsonMissingValidationErrors('finished_at');
+                });
+
+                it('must match the format Y-m-d H:i:s', function () {
+                    postJson('/api/tracks', ['finished_at' => '1999-01-01'])
+                        ->assertJsonValidationErrors('finished_at')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'finished_at', 'The finished at field must match the format Y-m-d H:i:s.'));
+                });
+            });
         });
     });
 
@@ -154,13 +226,13 @@ describe('Track', function () {
             $this->track = Track::factory()->for($this->user)->create(['title' => fake()->text(100)]);
         });
 
-        test('guests cannot update a track', function () {
+        it('[Guests] cannot update a track', function () {
             Auth::logout();
             postJson('/api/tracks/' . $this->track->id, ['title' => 'Attempt to update'])
                 ->assertUnauthorized();
         });
 
-        test('authenticated user cannot update another user\'s track', function () {
+        it('[Authenticated user] Cannot update another user\'s track', function () {
             $trackOfAnotherUser = Track::factory()
                 ->for(User::factory()->create())
                 ->create();
@@ -170,7 +242,7 @@ describe('Track', function () {
             assertDatabaseHas('tracks', ['id' => $trackOfAnotherUser->id, 'title' => $trackOfAnotherUser->title]);
         });
 
-        test('authenticated user can update their own track title', function () {
+        it('[Authenticated user] Update their own track title', function () {
             postJson('/api/tracks/' . $this->track->id, ['title' => 'Updated Title'])
                 ->assertOk()
                 ->assertJsonFragment(['title' => 'Updated Title']);
@@ -181,7 +253,7 @@ describe('Track', function () {
             ]);
         });
 
-        test('authenticated user can update their own track dates', function () {
+        it('[Authenticated user] Update their own track dates', function () {
             $newStartedAt = now()->subMinutes(30);
             $newFinishedAt = now();
 
@@ -200,19 +272,91 @@ describe('Track', function () {
             ]);
         });
 
-        test('updating a track validates title max length', function () {
-            postJson('/api/tracks/' . $this->track->id, ['title' => str_repeat('b', 1001)])
-                ->assertJsonValidationErrors('title');
+        test('[Authenticated user] Update their own track project', function () {
+            $project = Project::factory()->for($this->user)->create();
+
+            postJson('/api/tracks/' . $this->track->id, [
+                'project_id' => $project->id,
+            ])
+                ->assertOk()
+                ->assertJsonFragment(['project' => ProjectResource::make($project)]);
+
+            assertDatabaseHas('tracks', [
+                'id' => $this->track->id,
+                'project_id' => $project->id,
+            ]);
         });
 
-        test('updating a track validates date format', function () {
-            postJson('/api/tracks/' . $this->track->id, ['started_at' => 'invalid-date-update'])
-                ->assertJsonValidationErrors('started_at');
-        });
-
-        test('returns 404 if trying to update non-existent track', function () {
+        it('returns 404 if trying to update non-existent track', function () {
             postJson('/api/tracks/99999', ['title' => fake()->text(100)])
-            ->assertNotFound();
+                ->assertNotFound();
+        });
+
+        describe('Validation', function () {
+            describe('Project', function () {
+                it('is sometimes required', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['project_id' => null])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The project field is required.'));
+                });
+
+                it('is int', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['project_id' => 'test'])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The project field must be an integer.'));
+                });
+
+                it('is exists', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['project_id' => 100])
+                        ->assertJsonValidationErrors('project_id')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'project_id', 'The selected project is invalid.'));
+                });
+            });
+
+            describe('Title', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['title' => null])
+                        ->assertJsonMissingValidationErrors('title');
+                });
+
+                it('must be a string', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['title' => 1])
+                        ->assertJsonValidationErrors('title')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'title', 'The title field must be a string.'));
+                });
+
+                it('must not be greater than 1000 characters', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['title' => str_repeat('a', 1001)])
+                        ->assertJsonValidationErrors('title')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'title', 'The title field must not be greater than 1000 characters.'));
+                });
+            });
+
+            describe('Started at', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['started_at' => null])
+                        ->assertJsonMissingValidationErrors('started_at');
+                });
+
+                it('must match the format Y-m-d H:i:s', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['started_at' => '1999-01-01'])
+                        ->assertJsonValidationErrors('started_at')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'started_at', 'The started at field must match the format Y-m-d H:i:s.'));
+                });
+            });
+
+            describe('Finished at', function () {
+                it('is nullable', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['finished_at' => null])
+                        ->assertJsonMissingValidationErrors('finished_at');
+                });
+
+                it('must match the format Y-m-d H:i:s', function () {
+                    postJson('/api/tracks/' . $this->track->id, ['finished_at' => '1999-01-01'])
+                        ->assertJsonValidationErrors('finished_at')
+                        ->assertJson(fn(AssertableJson $json) => assertValidationErrorMessage($json, 'finished_at', 'The finished at field must match the format Y-m-d H:i:s.'));
+                });
+            });
         });
     });
 
@@ -221,19 +365,19 @@ describe('Track', function () {
             $this->track = Track::factory()->for($this->user)->create();
         });
 
-        test('guests cannot delete a track', function () {
+        it('[Guests] Cannot delete a track', function () {
             Auth::logout();
             deleteJson('/api/tracks/' . $this->track->id)->assertUnauthorized();
         });
 
-        test('authenticated user can delete their own track', function () {
+        it('[Authenticated user] Can delete their own track', function () {
             deleteJson('/api/tracks/' . $this->track->id)
                 ->assertOk();
 
             assertDatabaseMissing('tracks', ['id' => $this->track->id]);
         });
 
-        test('authenticated user cannot delete another user\'s track', function () {
+        it('[Authenticated user] Cannot delete another user\'s track', function () {
             $anotherUser = User::factory()->create();
             $trackOfAnotherUser = Track::factory()->for($anotherUser)->create();
 
@@ -242,7 +386,7 @@ describe('Track', function () {
             assertDatabaseHas('tracks', ['id' => $trackOfAnotherUser->id]);
         });
 
-        test('returns 404 if trying to delete non-existent track', function () {
+        it('returns 404 if trying to delete non-existent track', function () {
             deleteJson('/api/tracks/99999')
             ->assertNotFound();
         });

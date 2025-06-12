@@ -48,7 +48,7 @@ describe('Login', function () {
             ->toBe($this->email);
     });
 
-    it('logs in a user even if email has different casing', function () {
+    it('email has different casing', function () {
         $mixedCaseEmail = 'TeStUsEr@eXaMpLe.CoM';
         $lowerCaseEmail = strtolower($mixedCaseEmail);
 
@@ -75,7 +75,7 @@ describe('Login', function () {
             ->toBe($lowerCaseEmail);
     });
 
-    it('logs in a user with a password of minimum length', function () {
+    it('password of minimum length', function () {
         $email = fake()->unique()->safeEmail();
         $password = fake()->password(8, 8);
 
@@ -112,7 +112,7 @@ describe('Login', function () {
             ->toBe($email);
     });
 
-    it('logs in a user with a password of maximum length', function () {
+    it('password of maximum length', function () {
         $email = fake()->unique()->safeEmail();
         $password = fake()->password(32, 32);
 
