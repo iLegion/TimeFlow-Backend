@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTO\User\UserCreateDTO;
+use App\Events\User\UserRegistered;
 use App\Exceptions\InternalServerErrorException;
 use App\Http\Resources\User\UserResource;
 use App\Models\User;
@@ -11,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class AuthController extends Controller
@@ -35,13 +35,18 @@ class AuthController extends Controller
                     $request->input('password')
                 )
             );
+        } catch (Throwable $e) {
+            throw new InternalServerErrorException($e);
+        }
 
+        UserRegistered::dispatch($user);
+
+        try {
             Auth::login($user);
 
-            return $this->response(
-                UserResource::make($user),
-                ['token' => $user->generateNewToken()->plainTextToken]
-            );
+            return UserResource::make($user)
+                ->additional(['token' => $user->generateNewToken()->plainTextToken])
+                ->response();
         } catch (Throwable $e) {
             throw new InternalServerErrorException($e);
         }
@@ -71,10 +76,9 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return $this->response(
-            UserResource::make($user),
-            ['token' => $user->generateNewToken()->plainTextToken]
-        );
+        return UserResource::make($user)
+            ->additional(['token' => $user->generateNewToken()->plainTextToken])
+            ->response();
     }
 
     public function logout(Request $request): JsonResponse
@@ -90,6 +94,6 @@ class AuthController extends Controller
             $user->currentAccessToken()->delete();
         }
 
-        return $this->response();
+        return response()->json();
     }
 }

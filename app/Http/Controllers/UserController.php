@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Data\User\UserUpdateData;
-use App\Data\User\UserUpdateEmailData;
-use App\Data\User\UserUpdatePasswordData;
+use App\Events\User\UserUpdatedEmail;
+use App\Events\User\UserUpdatedPassword;
+use App\Exceptions\InternalServerErrorException;
 use App\Http\Resources\User\UserResource;
 use App\Services\User\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -17,7 +19,7 @@ class UserController extends Controller
     {
         Gate::authorize('view', $this->user);
 
-        return $this->response(UserResource::make($this->user));
+        return UserResource::make($this->user)->response();
     }
 
     public function update(Request $request, UserService $userService): JsonResponse
@@ -30,7 +32,7 @@ class UserController extends Controller
 
         $user = $userService->update(
             UserUpdateData::from([
-                ...$request->toArray(),
+                'name' => $request->input('name'),
                 'user' => $this->user,
             ])
         );
@@ -38,6 +40,9 @@ class UserController extends Controller
         return UserResource::make($user)->response();
     }
 
+    /**
+     * @throws InternalServerErrorException
+     */
     public function updateEmail(Request $request, UserService $userService): JsonResponse
     {
         Gate::authorize('update', $this->user);
@@ -46,16 +51,26 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', "not_in:{$this->user->email}", 'unique:users'],
         ]);
 
-        $user = $userService->updateEmail(
-            UserUpdateEmailData::from([
-                ...$request->toArray(),
-                'user' => $this->user,
-            ])
-        );
+        try {
+            $oldEmail = $this->user->email;
+            $user = $userService->update(
+                UserUpdateData::from([
+                    'email' => strtolower($request->input('email')),
+                    'user' => $this->user,
+                ])
+            );
 
-        return UserResource::make($user)->response();
+            UserUpdatedEmail::dispatch($user, $oldEmail);
+
+            return UserResource::make($user)->response();
+        } catch (Throwable $e) {
+            throw new InternalServerErrorException($e);
+        }
     }
 
+    /**
+     * @throws InternalServerErrorException
+     */
     public function updatePassword(Request $request, UserService $userService): JsonResponse
     {
         Gate::authorize('update', $this->user);
@@ -65,13 +80,19 @@ class UserController extends Controller
             'new_password' => ['required', 'string', 'min:8', 'max:32', 'different:old_password', 'confirmed'],
         ]);
 
-        $user = $userService->updatePassword(
-            UserUpdatePasswordData::from([
-                ...$request->toArray(),
-                'user' => $this->user,
-            ])
-        );
+        try {
+            $user = $userService->update(
+                UserUpdateData::from([
+                    'password' => $request->input('new_password'),
+                    'user' => $this->user,
+                ])
+            );
 
-        return UserResource::make($user)->response();
+            UserUpdatedPassword::dispatch($user);
+
+            return UserResource::make($user)->response();
+        } catch (Throwable $e) {
+            throw new InternalServerErrorException($e);
+        }
     }
 }

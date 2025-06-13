@@ -22,7 +22,7 @@ describe('Register', function () {
             'password' => $this->password,
             'password_confirmation' => $this->password,
         ])
-            ->assertStatus(200)
+            ->assertCreated()
             ->assertJsonStructure([
                 'data' => ['id', 'name', 'email'],
                 'token'
@@ -59,7 +59,7 @@ describe('Register', function () {
             'password' => $this->password,
             'password_confirmation' => $this->password,
         ])
-            ->assertStatus(200)
+            ->assertCreated()
             ->assertJsonStructure([
                 'data' => ['id', 'name', 'email'],
                 'token'

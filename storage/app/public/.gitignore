@@ -1,2 +1,5 @@
 *
 !.gitignore
+!system
+!system/images
+!system/images/*
