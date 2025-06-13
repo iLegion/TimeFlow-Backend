@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserEmailVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['throttle:api'])->group(function () {
@@ -24,6 +25,11 @@ Route::middleware(['throttle:api'])->group(function () {
                 Route::post('email', [UserController::class, 'updateEmail']);
                 Route::post('password', [UserController::class, 'updatePassword']);
             });
+        });
+
+        Route::prefix('email-verification')->group(function () {
+            Route::post('send', [UserEmailVerificationController::class, 'send']);
+            Route::post('verify', [UserEmailVerificationController::class, 'verify']);
         });
 
         Route::prefix('projects')->group(function () {

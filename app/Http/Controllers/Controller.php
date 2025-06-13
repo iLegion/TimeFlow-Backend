@@ -14,14 +14,4 @@ abstract class Controller
     {
         $this->user = Auth::user();
     }
-
-    public function response(mixed $data = [], array $additional = []): JsonResponse
-    {
-        return response()->json(['data' => $data, ...$additional]);
-    }
-
-    public function responseError(string $message, int $status): JsonResponse
-    {
-        return response()->json(['message' => $message], $status);
-    }
 }

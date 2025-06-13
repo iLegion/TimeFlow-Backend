@@ -3,8 +3,6 @@
 namespace App\Services\User;
 
 use App\Data\User\UserUpdateData;
-use App\Data\User\UserUpdateEmailData;
-use App\Data\User\UserUpdatePasswordData;
 use App\DTO\User\UserCreateDTO;
 use App\Models\User;
 
@@ -27,28 +25,11 @@ class UserService
         $user = $data->user;
 
         if ($data->name && $user->name !== $data->name) $user->name = $data->name;
+        if ($data->email && $user->email !== $data->email) $user->email = $data->email;
+        if ($data->password) $user->password = bcrypt($data->password);
+        if ($data->email_verified_at) $user->email_verified_at = $data->email_verified_at;
 
         if ($user->isDirty()) $user->save();
-
-        return $user;
-    }
-
-    public function updateEmail(UserUpdateEmailData $data): User
-    {
-        $user = $data->user;
-        $user->email = $data->email;
-
-        $user->save();
-
-        return $user;
-    }
-
-    public function updatePassword(UserUpdatePasswordData $data): User
-    {
-        $user = $data->user;
-        $user->password = bcrypt($data->new_password);
-
-        $user->save();
 
         return $user;
     }
