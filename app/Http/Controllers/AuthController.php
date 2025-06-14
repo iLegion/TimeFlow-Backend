@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\DTO\User\UserCreateDTO;
+use App\Data\User\UserCreateData;
 use App\Events\User\UserRegistered;
 use App\Exceptions\InternalServerErrorException;
 use App\Http\Resources\User\UserResource;
@@ -29,11 +29,11 @@ class AuthController extends Controller
 
         try {
             $user = $userService->create(
-                new UserCreateDTO(
-                    $request->input('name'),
-                    $request->input('email'),
-                    $request->input('password')
-                )
+                UserCreateData::from([
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'password' => $request->input('password')
+                ])
             );
         } catch (Throwable $e) {
             throw new InternalServerErrorException($e);

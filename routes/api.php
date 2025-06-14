@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthSocialController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\UserController;
@@ -11,6 +12,11 @@ Route::middleware(['throttle:api'])->group(function () {
     Route::prefix('auth')->middleware(['throttle:auth'])->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
+
+        Route::prefix('social')->group(function () {
+            Route::get('google/redirect', [AuthSocialController::class, 'redirectGoogle']);
+            Route::get('google/callback', [AuthSocialController::class, 'callbackGoogle']);
+        });
     });
 
     Route::middleware(['auth:sanctum'])->group(function () {
