@@ -14,8 +14,14 @@ Route::middleware(['throttle:api'])->group(function () {
         Route::post('login', [AuthController::class, 'login']);
 
         Route::prefix('social')->group(function () {
-            Route::get('google/redirect', [AuthSocialController::class, 'redirectGoogle']);
-            Route::get('google/callback', [AuthSocialController::class, 'callbackGoogle']);
+            Route::prefix('google')->group(function () {
+                Route::get('redirect', [AuthSocialController::class, 'redirectGoogle']);
+                Route::get('callback', [AuthSocialController::class, 'callbackGoogle']);
+            });
+            Route::prefix('github')->group(function () {
+                Route::get('redirect', [AuthSocialController::class, 'redirectGithub']);
+                Route::get('callback', [AuthSocialController::class, 'callbackGithub']);
+            });
         });
     });
 
