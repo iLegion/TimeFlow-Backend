@@ -23,8 +23,8 @@ class TrackController extends Controller
         Gate::authorize('viewAny', Track::class);
 
         $request->validate([
-            'from' => ['sometimes', 'required_with:to', 'exclude_without:to', Rule::date()->format('Y-m-d')],
-            'to' => ['sometimes', 'required_with:from', 'exclude_without:from', Rule::date()->format('Y-m-d')],
+            'from' => ['required_with:to', 'exclude_without:to', Rule::date()->format('Y-m-d')],
+            'to' => ['required_with:from', 'exclude_without:from', Rule::date()->format('Y-m-d')],
         ]);
 
         $tracks = $service->get(
