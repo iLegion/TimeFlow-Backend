@@ -17,11 +17,11 @@ class TrackService
             ->whereNotNull('finished_at')
             ->when($data->from && $data->to, function ($query) use ($data) {
                 $query
-                    ->where('started_at', '>=', $data->from)
+                    ->where('started_at', '>=', $data->from->startOfDay())
                     ->where('started_at', '<=', $data->to->endOfDay());
             })
             ->when(!$data->from || !$data->to, function ($query) use ($data) {
-                $query->where('started_at', '>=', now()->subWeek());
+                $query->where('started_at', '>=', today()->subWeek());
             })
             ->whereBelongsTo($data->user)
             ->orderBy('started_at', 'desc')
