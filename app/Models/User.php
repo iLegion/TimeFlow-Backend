@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Database\Factories\TrackFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -23,11 +25,12 @@ use Laravel\Sanctum\NewAccessToken;
  * @property ?Carbon $updated_at
  *
  * @property-read Collection<int, Project> $projects
+ * @property-read Collection<int, Track> $tracks
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<TrackFactory> */
-    use HasFactory, HasApiTokens;
+    use HasFactory, SoftDeletes, HasApiTokens;
 
     public function casts(): array
     {
@@ -51,5 +54,10 @@ class User extends Authenticatable
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function tracks(): HasMany
+    {
+        return $this->hasMany(Track::class);
     }
 }

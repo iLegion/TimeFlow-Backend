@@ -49,5 +49,13 @@ return [
                 'Not requested' => 'If you did not request this change, please contact our support team immediately to ensure the security of your account.',
             ],
         ],
+        'unverified_email' => [
+            'subject' => 'Don\'t forget to confirm your email for :value!',
+            'content' => [
+                'main' => 'We noticed that you have not yet verified your email address for your :value account.',
+                'text_1' => 'Email verification is important for the security of your account and to gain full access to all the functionality of the application.',
+                'note' => 'Please note: If your email address is not verified, your account will be deleted on :date-delete. It will then be available for recovery until :date-force-delete.',
+            ]
+        ]
     ],
 ];

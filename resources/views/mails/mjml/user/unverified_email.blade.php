@@ -58,7 +58,15 @@
                     </mj-text>
 
                     <mj-text padding-bottom="25px">
-                        Some main text...
+                        {{ __('mails.user.unverified_email.content.main', ['value' => $system['title']]) }}
+                    </mj-text>
+
+                    <mj-text padding-bottom="25px">
+                        {{ __('mails.user.unverified_email.content.text_1') }}
+                    </mj-text>
+
+                    <mj-text color="#ef5350" font-weight="bold">
+                        {{ __('mails.user.unverified_email.content.note', ['date-delete' => $dateDelete, 'date-force-delete' => $dateForceDelete]) }}
                     </mj-text>
                 </mj-column>
             </mj-section>
