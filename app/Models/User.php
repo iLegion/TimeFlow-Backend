@@ -26,6 +26,9 @@ use Laravel\Sanctum\NewAccessToken;
  *
  * @property-read Collection<int, Project> $projects
  * @property-read Collection<int, Track> $tracks
+ * @property-read Collection<int, SocialProvider> $socialProviders
+ *
+ * @method static Builder<self> query()
  */
 class User extends Authenticatable
 {
@@ -59,5 +62,10 @@ class User extends Authenticatable
     public function tracks(): HasMany
     {
         return $this->hasMany(Track::class);
+    }
+
+    public function socialProviders(): HasMany
+    {
+        return $this->hasMany(SocialProvider::class);
     }
 }
