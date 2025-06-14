@@ -2,18 +2,19 @@
 
 namespace App\Services\User;
 
+use App\Data\User\UserCreateData;
 use App\Data\User\UserUpdateData;
-use App\DTO\User\UserCreateDTO;
 use App\Models\User;
 
 class UserService
 {
-    public function create(UserCreateDTO $dto): User
+    public function create(UserCreateData $data): User
     {
         $user = new User();
-        $user->name = $dto->name;
-        $user->email = $dto->email;
-        $user->password = bcrypt($dto->password);
+        $user->name = $data->name;
+        $user->email = $data->email;
+        $user->password = bcrypt($data->password);
+        $user->email_verified_at = $data->email_verified_at;
 
         $user->save();
 
