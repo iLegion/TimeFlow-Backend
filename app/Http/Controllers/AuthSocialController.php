@@ -58,7 +58,9 @@ class AuthSocialController extends Controller
             throw new InternalServerErrorException($e);
         }
 
-        return response()->redirectTo(config('app.front_url'));
+        $token = $user->generateNewToken()->plainTextToken;
+
+        return response()->redirectTo(config('app.front_url') . "/auth?token=$token");
     }
 
     public function redirectGithub(): SymfonyRedirectResponse|RedirectResponse
@@ -98,7 +100,9 @@ class AuthSocialController extends Controller
                 );
             }
 
-            return response()->redirectTo(config('app.front_url'));
+            $token = $user->generateNewToken()->plainTextToken;
+
+            return response()->redirectTo(config('app.front_url') . "/auth?token=$token");
         } catch (Throwable $e) {
             throw new InternalServerErrorException($e);
         }
