@@ -21,6 +21,13 @@ class ProjectController extends Controller
         return ProjectResource::collection($service->get($this->user))->response();
     }
 
+    public function show(Project $project): JsonResponse
+    {
+        Gate::authorize('view', $project);
+
+        return ProjectResource::make($project)->response();
+    }
+
     public function store(Request $request, ProjectService $service): JsonResponse
     {
         Gate::authorize('create', Project::class);

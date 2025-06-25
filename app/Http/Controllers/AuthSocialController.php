@@ -34,8 +34,8 @@ class AuthSocialController extends Controller
             if (!$user) {
                 $user = $userService->create(
                     UserCreateData::from([
-                        'email' => $user->email,
-                        'name' => $user->name ?? 'User-From-Google_' . $user->id,
+                        'email' => $oUser->email,
+                        'name' => $oUser->name ?? 'User-From-Google_' . $oUser->id,
                         'password' => bcrypt(Str::random(8)),
                         'email_verified_at' => now(),
                     ])
@@ -80,8 +80,8 @@ class AuthSocialController extends Controller
             if (!$user) {
                 $user = $userService->create(
                     UserCreateData::from([
-                        'email' => $user->email,
-                        'name' => $user->name ?? 'User-From-Github_' . $user->id,
+                        'email' => $oUser->email,
+                        'name' => $oUser->name ?? 'User-From-Github_' . $oUser->id,
                         'password' => bcrypt(Str::random(8)),
                         'email_verified_at' => now(),
                     ])

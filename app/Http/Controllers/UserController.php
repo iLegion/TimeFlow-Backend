@@ -76,14 +76,13 @@ class UserController extends Controller
         Gate::authorize('update', $this->user);
 
         $request->validate([
-            'old_password' => ['required', 'string', 'min:8', 'max:32', 'current_password'],
-            'new_password' => ['required', 'string', 'min:8', 'max:32', 'different:old_password', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'max:32', 'different:old_password', 'confirmed'],
         ]);
 
         try {
             $user = $userService->update(
                 UserUpdateData::from([
-                    'password' => $request->input('new_password'),
+                    'password' => $request->input('password'),
                     'user' => $this->user,
                 ])
             );
