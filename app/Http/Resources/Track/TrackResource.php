@@ -21,8 +21,8 @@ class TrackResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'project' => $this->relationLoaded('project') ? ProjectResource::make($this->project) : null,
-            'started_at' => $this->started_at->format('Y-m-d H:i:s'),
-            'finished_at' => $this->finished_at?->format('Y-m-d H:i:s'),
+            'started_at' => $this->started_at,
+            'finished_at' => $this->finished_at,
         ];
     }
 }

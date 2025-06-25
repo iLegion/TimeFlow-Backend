@@ -5,14 +5,15 @@ namespace App\Data\Track;
 use App\Models\Project;
 use Illuminate\Support\Carbon;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Optional;
 
 class TrackUpdateData extends Data
 {
-    public ?Project $project;
+    public Project | null | Optional $project;
 
-    public ?string $title = null;
+    public string | null | Optional $title;
 
-    public ?Carbon $started_at = null;
+    public Carbon | Optional $started_at;
 
-    public ?Carbon $finished_at = null;
+    public Carbon | Optional $finished_at;
 }

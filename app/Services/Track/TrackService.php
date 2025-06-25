@@ -8,12 +8,14 @@ use App\Data\Track\TrackUpdateData;
 use App\Models\Track;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\LaravelData\Optional;
 
 class TrackService
 {
     public function get(TrackIndexData $data): Collection
     {
         return Track::query()
+            ->with(['project'])
             ->whereNotNull('finished_at')
             ->when($data->from && $data->to, function ($query) use ($data) {
                 $query
@@ -31,6 +33,7 @@ class TrackService
     public function getActive(User $user): ?Track
     {
         return Track::query()
+            ->with(['project'])
             ->whereNull('finished_at')
             ->whereBelongsTo($user)
             ->first();
@@ -54,29 +57,36 @@ class TrackService
         $track->started_at = $data->started_at ?? now();
         $track->finished_at = $data->finished_at;
 
+        if ($data->project) $track->project()->associate($data->project);
+
         $track->user()->associate($data->user);
-        $track->project()->associate($data->project);
         $track->save();
 
-        return $track;
+        return $track->load(['project']);
     }
 
     public function update(Track $track, TrackUpdateData $data): Track
     {
-        if ($track->title !== $data->title) {
+        if (!$data->title instanceof Optional && $track->title !== $data->title) {
             $track->title = $data->title;
         }
 
-        if ($track->project?->id !== $data->project?->id) {
-            $track->project()->associate($data->project);
+        if (!$data->project instanceof Optional) {
+            if ($data->project) {
+                if ($data->project->id !== $track->project?->id) {
+                    $track->project()->associate($data->project);
+                }
+            } else {
+                $track->project()->dissociate();
+            }
         }
 
-        $track->started_at = $data->started_at ?? $track->started_at ?? now();
-        $track->finished_at = $data->finished_at ?? $track->finished_at ?? now();
+        if (!$data->started_at instanceof Optional) $track->started_at = $data->started_at;
+        if (!$data->finished_at instanceof Optional) $track->finished_at = $data->finished_at;
 
         if ($track->isDirty()) $track->save();
 
-        return $track;
+        return $track->load(['project']);
     }
 
     public function delete(Track $track): ?bool

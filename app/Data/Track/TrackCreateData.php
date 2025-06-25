@@ -11,7 +11,7 @@ class TrackCreateData extends Data
 {
     public User $user;
 
-    public ?Project $project;
+    public ?Project $project = null;
 
     public ?string $title = null;
 

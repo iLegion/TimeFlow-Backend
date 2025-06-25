@@ -83,20 +83,21 @@ class TrackController extends Controller
         Gate::authorize('update', $track);
 
         $request->validate([
-            'project_id' => ['sometimes', 'required', 'int', 'exists:projects,id'],
+            'project_id' => ['nullable', 'int', 'exists:projects,id'],
             'title' => ['nullable', 'string', 'max:1000'],
-            'started_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
-            'finished_at' => ['nullable', Rule::date()->format('Y-m-d H:i:s')],
+            'started_at' => ['sometimes', 'required', Rule::date()->format('Y-m-d H:i:s')],
+            'finished_at' => ['sometimes', 'required', Rule::date()->format('Y-m-d H:i:s')],
         ]);
+
+        $additionalData = [];
+
+        if ($request->exists('started_at')) $additionalData['started_at'] = Carbon::parse($request->input('started_at'));
+        if ($request->exists('finished_at')) $additionalData['finished_at'] = Carbon::parse($request->input('finished_at'));
+        if ($request->exists('project_id')) $additionalData['project'] = Project::query()->find($request->input('project_id'));
 
         $track = $service->update(
             $track,
-            TrackUpdateData::from([
-                ...$request->toArray(),
-                'started_at' => $request->exists('started_at') ? Carbon::parse($request->input('started_at')) : null,
-                'finished_at' => $request->exists('finished_at') ? Carbon::parse($request->input('finished_at')) : null,
-                'project' => Project::query()->find($request->input('project_id')),
-            ])
+            TrackUpdateData::from([...$request->toArray(), ...$additionalData])
         );
 
         return TrackResource::make($track)->response();

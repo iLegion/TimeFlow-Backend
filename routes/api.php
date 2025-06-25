@@ -46,6 +46,7 @@ Route::middleware(['throttle:api'])->group(function () {
 
         Route::prefix('projects')->group(function () {
             Route::get('', [ProjectController::class, 'index']);
+            Route::get('{project}', [ProjectController::class, 'show']);
             Route::post('', [ProjectController::class, 'store']);
             Route::post('{project}', [ProjectController::class, 'update']);
             Route::delete('{project}', [ProjectController::class, 'delete']);

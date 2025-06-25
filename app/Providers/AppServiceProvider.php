@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Project;
 use App\Models\User;
+use App\Observers\ProjectObserver;
 use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -36,5 +38,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('process-email_verification', fn (User $user) => !$user->email_verified_at);
 
         User::observe(UserObserver::class);
+        Project::observe(ProjectObserver::class);
     }
 }
